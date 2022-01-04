@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import PropTypes from 'prop-types';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 import Skeleton from '../skeleton/Skeleton';
@@ -16,11 +17,11 @@ class CharInfo extends Component {
 
      marvelService = new MarvelService();
 
-     componentDidMount() {
+     componentDidMount () {
          this.updateCard();
      }
 
-     componentDidUpdate(prevProps) {
+     componentDidUpdate (prevProps) {
         if(this.props.charId !== prevProps.charId) {
             this.updateCard();
         }
@@ -38,6 +39,9 @@ class CharInfo extends Component {
            .getCharecter(charId)
            .then(this.onCharLoaded)
            .catch(this.onError)
+
+        //    тест на ошибку ErrorBoundary
+        // this.foo.bar = 0;
      }
 
      onCharLoaded = (char) => {
@@ -114,14 +118,16 @@ const View = ({char}) => {
                                     
                                 return (
                                     <li className="char__comics-item" key={i}>{item.name}</li>
-                                      )
-                                
-
+                                      ) 
                             })
                         }
                         </ul>
                     </>
     )
+}
+
+CharInfo.propTypes = {
+    charId: PropTypes.number
 }
 
 export default CharInfo;

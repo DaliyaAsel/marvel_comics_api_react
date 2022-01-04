@@ -2,6 +2,7 @@
 class MarvelService {
     _apiBase = 'https://gateway.marvel.com:443/v1/public/';
     _apiKey = 'apikey=16205229202dd6ae0472422579060448';
+    _baseOffset = 210; // базовый отступ для персонажей
 
     getResource = async (url) => {
         let res = await fetch(url);
@@ -13,9 +14,9 @@ class MarvelService {
         return await res.json();
     }
 
-    // запрос к async
-    getAllCharecters = async () => {
-        const res = await this.getResource(`${this._apiBase}characters?limit=9&offset=210&${this._apiKey}`);
+    // запрос к async ofset = this._baseOffset это по умолчанию, если не передали другого аргумента в ф-ю, т.е для большей гибкости
+    getAllCharecters = async (ofset = this._baseOffset) => {
+        const res = await this.getResource(`${this._apiBase}characters?limit=9&offset=${ofset}&${this._apiKey}`);
         return res.data.results.map(this. _transformCharecter);
     }
 

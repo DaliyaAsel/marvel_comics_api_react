@@ -1,4 +1,6 @@
 import { Component } from 'react';
+import PropTypes from 'prop-types';
+
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 import MarvelService from '../../services/MarvelService';
@@ -9,22 +11,47 @@ class CharList extends Component {
     state = {
         charList: [],
         loading: true,
-        error: false
+        error: false,
+        newItemLoading: false,
+        offset: 210,
+        itemEnded: false // св-во, если закончились элементы, чтобы кнопка LoadMore скрывалась
     }
 
      marvelService = new MarvelService();
 
     componentDidMount() {
-        this.marvelService.getAllCharecters()
-            .then(this.onCharListLoaded)
-            .catch(this.onError)
+       this.onRequestLoad();
     }
 
-    onCharListLoaded = (charList) => {
+    // метод, когда пользователь кликает на кнопку loadMore
+    onRequestLoad = (offset) => {
+        this.onCharListLoading();
+        this.marvelService.getAllCharecters(offset)
+        .then(this.onCharListLoaded)
+        .catch(this.onError)
+    }
+
+    onCharListLoading = () => {
         this.setState({
-            charList,
-            loading: false
+            newItemLoading: true
         })
+    }
+
+
+    // загрузились новые данные 
+    onCharListLoaded = (newCharList) => {
+        let ended = false;
+        if(newCharList < 9) {
+            ended =  true;
+        }
+
+        this.setState(({offset, charList}) => ({ // charList -  это charList из текущего state
+            charList: [...charList, ...newCharList ], 
+            loading: false,
+            newItemLoading: false,
+            offset: offset + 9,
+            itemEnded: ended
+        }))
     }
 
     onError = () => {
@@ -63,7 +90,7 @@ class CharList extends Component {
     }
      
     render () {
-        const {charList, loading, error} = this.state;
+        const {charList, loading, error, newItemLoading, offset, itemEnded} = this.state;
         
         const items = this.renderItems(charList);
 
@@ -76,13 +103,19 @@ class CharList extends Component {
                 {errorMessage}
                 {spinner}
                 {content}
-                <button className="button button__main button__long">
+                <button className="button button__main button__long"
+                style={{'display': itemEnded ? 'none' : 'block'}}
+                disabled={newItemLoading}
+                onClick={() => this.onRequestLoad(offset)}>
                     <div className="inner">load more</div>
                 </button>
             </div>
         )
     }
-
 }
+
+CharList.propTypes = {
+    onCharSelected: PropTypes.func.isRequired
+} 
 
 export default CharList;
