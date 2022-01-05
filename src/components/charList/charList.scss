@@ -29,7 +29,7 @@
             transform: translate(-15px, -15px);
         }
         &_selected {
-            box-shadow: 0 5px 20px $main-color;
+            box-shadow: 0 5px 20px 10px rgb(80, 77, 77);
             transform: translateY(-8px);
         }
     }
