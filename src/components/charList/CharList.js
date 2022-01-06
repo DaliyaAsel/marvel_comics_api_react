@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 import Spinner from '../spinner/Spinner';
@@ -7,77 +7,68 @@ import MarvelService from '../../services/MarvelService';
 import './charList.scss';
 
 
-class CharList extends Component {
-    state = {
-        charList: [],
-        loading: true,
-        error: false,
-        newItemLoading: false,
-        offset: 210,
-        itemEnded: false // св-во, если закончились элементы, чтобы кнопка LoadMore скрывалась
-    }
+const CharList = (props) => {
+    const [charList, setcharList] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    const [newItemLoading, setNewItemLoading] = useState(false);
+    const [offset, setOffset] = useState(210);
+    const [itemEnded, setItemEnded] = useState(false); // св-во, если закончились элементы, чтобы кнопка LoadMore скрывалась
 
-     marvelService = new MarvelService();
+    const marvelService = new MarvelService();
 
-    componentDidMount() {
-       this.onRequestLoad();
-    }
+    useEffect(() => {
+        onRequestLoad();
+    }, [])  // эта ф-я выполнится только 1 раз, при создании компонента, так как [] зависимость пустая
+
 
     // метод, когда пользователь кликает на кнопку loadMore
-    onRequestLoad = (offset) => {
-        this.onCharListLoading();
-        this.marvelService.getAllCharecters(offset)
-        .then(this.onCharListLoaded)
-        .catch(this.onError)
+   const onRequestLoad = (offset) => {
+        onCharListLoading();
+        marvelService.getAllCharecters(offset)
+        .then(onCharListLoaded)
+        .catch(onError)
     }
 
-    onCharListLoading = () => {
-        this.setState({
-            newItemLoading: true
-        })
+   const onCharListLoading = () => {
+        setNewItemLoading(true)
     }
 
 
     // загрузились новые данные 
-    onCharListLoaded = (newCharList) => {
+   const onCharListLoaded = (newCharList) => {
         let ended = false;
         if(newCharList < 9) {
             ended =  true;
         }
 
-        this.setState(({offset, charList}) => ({ // charList -  это charList из текущего state
-            charList: [...charList, ...newCharList ], 
-            loading: false,
-            newItemLoading: false,
-            offset: offset + 9,
-            itemEnded: ended
-        }))
+        setcharList(charList => [...charList, ...newCharList ]); // charList -  это charList из текущего state
+        setLoading(loading => false);
+        setNewItemLoading(newItemLoading => false);
+        setOffset(offset => offset + 9);
+        setItemEnded(itemEnded => ended);
+
     }
 
-    onError = () => {
-        this.setState({
-            error: true,
-            loading: false
-        })
+    const onError = () => {
+        setError(true);
+        setLoading(loading => true)
     }
 
     // работа с рефами
-    itemRefs = [];
-    setActiveRef = (elem) => {
-        this.itemRefs.push(elem);
-    }
+    const itemRefs = useRef([]);
 
     // работа с рефами и добавление класса к ним
-    focusOnItem = (id) => {
-        this.itemRefs.forEach(item => item.classList.remove('char__item_selected'));
-        this.itemRefs[id].classList.add('char__item_selected');
-        // this.itemRefs[id].focus();
+   const focusOnItem = (id) => {
+        itemRefs.current.forEach(item => item.classList.remove('char__item_selected'));
+        itemRefs.current[id].classList.add('char__item_selected');
+        // itemRefs.current[id].focus();
 
     }
 
     // Этот метод создан для оптимизации, 
     // чтобы не помещать такую конструкцию в метод render
-    renderItems(arr) {
+   function renderItems(arr) {
         const items =  arr.map((item, i) => {
             let imgStyle = {'objectFit' : 'cover'};
             if (item.thumbnail === 'http://i.annihil.us/u/prod/marvel/i/mg/b/40/image_not_available.jpg') {
@@ -86,20 +77,12 @@ class CharList extends Component {
 
             
             return (
-                <li ref = { this.setActiveRef }
+                <li ref = { el => itemRefs.current[i] = el}
                     className="char__item"
                     key={item.id}
-                    onClick={()=> { this.props.onCharSelected(item.id);
-                                    this.focusOnItem(i);
+                    onClick={()=> { props.onCharSelected(item.id);
+                                    focusOnItem(i);
                     }} 
-                    
-                   /* onKeyPress={(e) => {
-                        if (e.key === ' ' || e.key === "Enter") {
-                            this.props.onCharSelected(item.id);
-                            this.focusOnItem(i);
-                        }
-                    }}*/
-
                 >
                         <img src={item.thumbnail} alt={item.name} style={imgStyle}/>
                         <div className="char__name">{item.name}</div>
@@ -115,10 +98,7 @@ class CharList extends Component {
         )
     }
      
-    render () {
-        const {charList, loading, error, newItemLoading, offset, itemEnded} = this.state;
-        
-        const items = this.renderItems(charList);
+        const items = renderItems(charList);
 
         const errorMessage = error ? <ErrorMessage/> : null;
         const spinner = loading ? <Spinner/> : null;
@@ -132,13 +112,13 @@ class CharList extends Component {
                 <button className="button button__main button__long"
                 style={{'display': itemEnded ? 'none' : 'block'}}
                 disabled={newItemLoading}
-                onClick={() => this.onRequestLoad(offset)}>
+                onClick={() => onRequestLoad(offset)}>
                     <div className="inner">load more</div>
                 </button>
             </div>
         )
     }
-}
+
 
 CharList.propTypes = {
     onCharSelected: PropTypes.func.isRequired
