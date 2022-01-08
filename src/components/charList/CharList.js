@@ -3,37 +3,29 @@ import PropTypes from 'prop-types';
 
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 import './charList.scss';
 
 
 const CharList = (props) => {
     const [charList, setcharList] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
     const [newItemLoading, setNewItemLoading] = useState(false);
     const [offset, setOffset] = useState(210);
     const [itemEnded, setItemEnded] = useState(false); // св-во, если закончились элементы, чтобы кнопка LoadMore скрывалась
 
-    const marvelService = new MarvelService();
+    const {loading, error, getAllCharecters } = useMarvelService();
 
     useEffect(() => {
-        onRequestLoad();
+        onRequestLoad(offset, true);
     }, [])  // эта ф-я выполнится только 1 раз, при создании компонента, так как [] зависимость пустая
 
 
     // метод, когда пользователь кликает на кнопку loadMore
-   const onRequestLoad = (offset) => {
-        onCharListLoading();
-        marvelService.getAllCharecters(offset)
+   const onRequestLoad = (offset, initial) => {
+        initial ? setNewItemLoading(false) : setNewItemLoading(true); // чтобы при загрузке новых карточек, не обновлялись все карточки, так как из кастомного хука приходит  setLoading(true), соотвественно, чтобы хук не переписывать, проще изменить это на уровне компонента. Определяем первичная или нет загрузка
+        getAllCharecters(offset)
         .then(onCharListLoaded)
-        .catch(onError)
     }
-
-   const onCharListLoading = () => {
-        setNewItemLoading(true)
-    }
-
 
     // загрузились новые данные 
    const onCharListLoaded = (newCharList) => {
@@ -43,23 +35,17 @@ const CharList = (props) => {
         }
 
         setcharList(charList => [...charList, ...newCharList ]); // charList -  это charList из текущего state
-        setLoading(loading => false);
         setNewItemLoading(newItemLoading => false);
         setOffset(offset => offset + 9);
         setItemEnded(itemEnded => ended);
 
     }
 
-    const onError = () => {
-        setError(true);
-        setLoading(loading => true)
-    }
-
     // работа с рефами
     const itemRefs = useRef([]);
 
     // работа с рефами и добавление класса к ним
-   const focusOnItem = (id) => {
+    const focusOnItem = (id) => {
         itemRefs.current.forEach(item => item.classList.remove('char__item_selected'));
         itemRefs.current[id].classList.add('char__item_selected');
         // itemRefs.current[id].focus();
@@ -101,14 +87,13 @@ const CharList = (props) => {
         const items = renderItems(charList);
 
         const errorMessage = error ? <ErrorMessage/> : null;
-        const spinner = loading ? <Spinner/> : null;
-        const content = !(loading || error) ? items : null;
+        const spinner = (loading && !newItemLoading) ? <Spinner/> : null;  // loading && !newItemLoading - есть загрузка, но при этом не загрузка новых карточек
 
         return (
             <div className="char__list">
                 {errorMessage}
                 {spinner}
-                {content}
+                {items}
                 <button className="button button__main button__long"
                 style={{'display': itemEnded ? 'none' : 'block'}}
                 disabled={newItemLoading}

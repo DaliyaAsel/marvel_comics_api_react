@@ -3,52 +3,38 @@ import PropTypes from 'prop-types';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 import Skeleton from '../skeleton/Skeleton';
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 
 import './charInfo.scss';
 
 const CharInfo = (props) => {
 
     const [char, setChar] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(false);
 
-    const marvelService = new MarvelService();
+    const {loading, error, getCharecter, clearError} =  useMarvelService();
 
     useEffect(() => {
         updateCard();
     }, [props.charId])
 
     const updateCard = () => {
+        clearError();
         const {charId} = props;
         if(!charId){
             return;
         }
 
-        onResLoading();
-
-       marvelService
-           .getCharecter(charId)
+        getCharecter(charId)
            .then(onCharLoaded)
-           .catch(onError)
 
         //    тест на ошибку ErrorBoundary
         // this.foo.bar = 0;
      }
 
     const onCharLoaded = (char) => {
-        setLoading(false);
         setChar(char)
     }
 
-    const onResLoading = () => { // чтобы спинер появлялся
-        setLoading(true);
-    }
-
-    const onError = () => {
-        setError(true);
-        setLoading(false);
-    }
 
 
         const skeleton =  char || loading || error ? null : <Skeleton />; 

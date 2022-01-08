@@ -1,61 +1,42 @@
-import { Component } from 'react';
+import {useState, useEffect} from 'react';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 
 import './randomChar.scss';
 import mjolnir from '../../resources/img/mjolnir.png';
 
+
 // класс для отображения рандомной карточки с персонажем вверху
-class RandomChar extends Component {
+const RandomChar = () => {
+ 
+    const [char, setChar] = useState(null);
+    // достаем сотсояния из нашего кастомного хука
+    const {loading, error, getCharecter, clearError} = useMarvelService();
 
-    state = {
-        char: {},
-        loading: true,
-        error: false
-    }
+    useEffect(() => {
+        updateChar(); // вызвали сразу метод
+    }, [])
+        
 
-    componentDidMount() {
-        this.updateChar(); // вызвали сразу метод
-    }
-
-    // экзмемпляр калсса MarvelService, без const, так как не используем конструктор, т.е. это новое св-во внутри класса RandomChar
-    marvelService = new MarvelService();
-
-    onCharLoaded = (char) => { // char  это трансформированный обьект из метода getCharecter
-        this.setState({char:char, loading: false}) // в ф-ии  _transformCharecter MarvelServes.js мы структурировали обьект до нужного состояния, как только данные загрузились loading приравниваем к false
-    }
-
-    onResLoading = () => { // при нажатии на кнопку Try, чтобы спинер появлялся
-        this.setState({
-            loading: true
-        })
-    }
-
-    onError = () => { // метод для обработки ошибки
-        this.setState({
-            loading: false,
-            error: true
-        })
+    // загрузка персонажей
+   const onCharLoaded = (char) => { // char  это трансформированный обьект из метода getCharecter
+        setChar(char) // в ф-ии  _transformCharecter useMarvelServes.js мы структурировали обьект до нужного состояния
     }
 
 
     // метод, который обращается к сервису и записывает эти данные в state
-    updateChar = () => {
-        const id = Math.floor(Math.random() * (1011400 - 1011000) + 1011000 ); // 1011400 - максимальный диапазон - минус минимальный диапазон 1011000 id + минус минимальный диапазон 1011000, в реальности уточнять у бэкендеров
-        this.onResLoading();
-        this.marvelService 
-            .getCharecter(id)
-            .then(this.onCharLoaded)
-            .catch(this.onError); // если ошибка на сервере, то выбрасываем ошибку из метода  onError()
+    const updateChar = () => {
+        clearError();
+        const id = Math.floor(Math.random() * (1011400 - 1011000)) + 1011000;
+        getCharecter(id)
+            .then(onCharLoaded);
     }
 
 
-    render() {
-        const {char, loading, error} = this.state;  // деструктурировали обьект
         const errorMessage = error ? <ErrorMessage /> : null;
         const spinner = loading ? <Spinner/> : null ;
-        const content = !(loading || error) ? <View char={char} /> : null ;  //есди нет ошибки или нет загрузки, то возвращаем компонент View
+        const content = !(loading || error || !char) ? <View char={char} /> : null ;  //есди нет ошибки или нет загрузки, то возвращаем компонент View
 
         return (
             <div className="randomchar">
@@ -71,14 +52,13 @@ class RandomChar extends Component {
                         Or choose another one
                     </p>
                     <button className="button button__main">
-                        <div className="inner" onClick={this.updateChar}>try it</div>
+                        <div className="inner" onClick={updateChar}>try it</div>
                     </button>
                     <img src={mjolnir} alt="mjolnir" className="randomchar__decoration"/>
                 </div>
             </div>
         )
     }
-}
 
 const View = ({char}) => { //создали компонент для отображения динамических данных, передели в него данные обьекта, т.е. это просто компонент для отображения данных, без логики
     const {name, description, thumbnail, homepage, wiki } = char;
