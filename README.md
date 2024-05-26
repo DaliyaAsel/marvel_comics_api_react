@@ -1,7 +1,7 @@
 # marvel_comics_api_react
 
 ### Stack:    
-:green_circle: JS
+:green_circle: JS   
 :green_circle: SCSS   
 :green_circle: REACT           
 :green_circle: To interact with API used Fetch   
